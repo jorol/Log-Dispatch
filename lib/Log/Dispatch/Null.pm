@@ -10,11 +10,9 @@ use Log::Dispatch::Output;
 use base qw( Log::Dispatch::Output );
 
 sub new {
-    my $proto = shift;
-    my $class = ref $proto || $proto;
+    my $class = shift;
 
     my $self = bless {}, $class;
-
     $self->_basic_init(@_);
 
     return $self;

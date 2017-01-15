@@ -14,38 +14,53 @@ use Log::Dispatch::Email;
 
 use base qw( Log::Dispatch::Email );
 
+use Log::Dispatch::Types;
 use Mail::Sender ();
+use Params::ValidationCompiler qw( validation_for );
 
-sub new {
-    my $proto = shift;
-    my $class = ref $proto || $proto;
+{
+    my $validator = validation_for(
+        params => {
+            smtp         => { default => 'localhost' },
+            port         => { default => 25 },
+            authid       => 0,
+            authpwd      => 0,
+            auth         => 0,
+            tls_required => 0,
+            replyto      => 0,
+            fake_from    => 0,
+        },
+        slurpy => 1,
+    );
 
-    my %p = @_;
+    sub new {
+        my $class = shift;
+        my %p     = $validator->(@_);
 
-    my $smtp = delete $p{smtp} || 'localhost';
-    my $port = delete $p{port} || '25';
+        my $smtp         = delete $p{smtp};
+        my $port         = delete $p{port};
+        my $authid       = delete $p{authid};
+        my $authpwd      = delete $p{authpwd};
+        my $auth         = delete $p{auth};
+        my $tls_required = delete $p{tls_required};
+        my $replyto      = delete $p{replyto};
+        my $fake_from    = delete $p{fake_from};
 
-    my $authid       = delete $p{authid};
-    my $authpwd      = delete $p{authpwd};
-    my $auth         = delete $p{auth};
-    my $tls_required = delete $p{tls_required};
-    my $replyto      = delete $p{replyto};
-    my $fake_from    = delete $p{fake_from};
+        my $self = $class->SUPER::new(%p);
 
-    my $self = $class->SUPER::new(%p);
+        $self->{smtp} = $smtp;
+        $self->{port} = $port;
 
-    $self->{smtp} = $smtp;
-    $self->{port} = $port;
+        $self->{authid}       = $authid;
+        $self->{authpwd}      = $authpwd;
+        $self->{auth}         = $auth;
+        $self->{tls_required} = $tls_required;
 
-    $self->{authid}       = $authid;
-    $self->{authpwd}      = $authpwd;
-    $self->{auth}         = $auth;
-    $self->{tls_required} = $tls_required;
+        $self->{fake_from} = $fake_from;
+        $self->{replyto}   = $replyto;
 
-    $self->{fake_from} = $fake_from;
-    $self->{replyto}   = $replyto;
-
-    return $self;
+        return $self;
+    }
 }
 
 sub send_email {

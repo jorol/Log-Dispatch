@@ -9,21 +9,24 @@ use Log::Dispatch::Output;
 
 use base qw( Log::Dispatch::Output );
 
-use Params::Validate qw(validate SCALAR ARRAYREF BOOLEAN);
-Params::Validate::validation_options( allow_extra => 1 );
+use Log::Dispatch::Types;
+use Params::ValidationCompiler qw( validation_for );
 
-sub new {
-    my $proto = shift;
-    my $class = ref $proto || $proto;
+{
+    my $validator = validation_for(
+        params => { handle => { type => t('CanPrint') } },
+        slurpy => 1,
+    );
 
-    my %p = validate( @_, { handle => { can => 'print' } } );
+    sub new {
+        my $class = shift;
+        my %p     = $validator->(@_);
 
-    my $self = bless {}, $class;
+        my $self = bless { handle => delete $p{handle} }, $class;
+        $self->_basic_init(%p);
 
-    $self->_basic_init(%p);
-    $self->{handle} = $p{handle};
-
-    return $self;
+        return $self;
+    }
 }
 
 sub log_message {

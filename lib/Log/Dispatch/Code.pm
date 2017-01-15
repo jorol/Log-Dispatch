@@ -9,21 +9,25 @@ use Log::Dispatch::Output;
 
 use base qw( Log::Dispatch::Output );
 
-use Params::Validate qw(validate CODEREF);
-Params::Validate::validation_options( allow_extra => 1 );
+use Log::Dispatch::Types;
+use Params::ValidationCompiler qw( validation_for );
 
-sub new {
-    my $proto = shift;
-    my $class = ref $proto || $proto;
+{
+    my $validator = validation_for(
+        params => { code => { type => t('CodeRef') } },
+        slurpy => 1,
+    );
 
-    my %p = validate( @_, { code => CODEREF } );
+    sub new {
+        my $class = shift;
 
-    my $self = bless {}, $class;
+        my %p = $validator->(@_);
 
-    $self->_basic_init(%p);
-    $self->{code} = $p{code};
+        my $self = bless { code => delete $p{code} }, $class;
+        $self->_basic_init(%p);
 
-    return $self;
+        return $self;
+    }
 }
 
 sub log_message {

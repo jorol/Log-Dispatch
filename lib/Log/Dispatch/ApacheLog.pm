@@ -9,8 +9,8 @@ use Log::Dispatch::Output;
 
 use base qw( Log::Dispatch::Output );
 
-use Params::Validate qw(validate);
-Params::Validate::validation_options( allow_extra => 1 );
+use Log::Dispatch::Types;
+use Params::ValidationCompiler qw( validation_for );
 
 BEGIN {
     if ( $ENV{MOD_PERL} && $ENV{MOD_PERL} =~ /2\./ ) {
@@ -21,18 +21,21 @@ BEGIN {
     }
 }
 
-sub new {
-    my $proto = shift;
-    my $class = ref $proto || $proto;
+{
+    my $validator = validation_for(
+        params => { apache => { type => t('ApacheLog') } },
+        slurpy => 1,
+    );
 
-    my %p = validate( @_, { apache => { can => 'log' } } );
+    sub new {
+        my $class = shift;
+        my %p     = validator->(@_);
 
-    my $self = bless {}, $class;
+        my $self = bless { apache_log => ( delete $p{apache} )->log }, $class;
+        $self->_basic_init(%p);
 
-    $self->_basic_init(%p);
-    $self->{apache_log} = $p{apache}->log;
-
-    return $self;
+        return $self;
+    }
 }
 
 {
